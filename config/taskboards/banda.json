@@ -1,0 +1,27 @@
+{
+  "channelId": "1461163145988145397",
+  "guildId": "1460793541176463466",
+  "title": "objetos de Banda",
+  "description": "Tareas de banda",
+  "color": "#0000FF",
+  "tasks": [
+    {
+    "name": "Grafiti territorio",
+    "durationMinutes": 0,
+    "cooldownMinutes": 10080,
+    "isGlobal": true,
+    "description": "Esta tarea es para todo el servidor",
+    "emoji": "🎨",
+    "buttonStyle": "Success"
+    },
+    {
+    "name": "Piezas de Armas",
+    "durationMinutes": 0,
+    "cooldownMinutes": 1440,
+    "isGlobal": true,
+    "description": "Esta tarea es para todo el servidor",
+    "emoji": "🧩",
+    "buttonStyle": "Success"
+    }
+  ]
+}

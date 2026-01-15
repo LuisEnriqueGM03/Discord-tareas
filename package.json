@@ -1,0 +1,48 @@
+{
+  "name": "discord-task-bot",
+  "version": "1.0.0",
+  "description": "Bot de Discord con sistema de tareas y cooldowns",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.1",
+    "uuid": "^9.0.1",
+    "node-schedule": "^2.1.1",
+    "winston": "^3.11.0",
+    "typeorm": "^0.3.19",
+    "pg": "^8.11.3",
+    "reflect-metadata": "^0.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/uuid": "^9.0.7",
+    "@types/node-schedule": "^2.1.5",
+    "typescript": "^5.3.3",
+    "ts-node-dev": "^2.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.11",
+    "ts-jest": "^29.1.1"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "tasks",
+    "cooldown"
+  ],
+  "author": "",
+  "license": "ISC"
+}

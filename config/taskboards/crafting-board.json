@@ -1,0 +1,17 @@
+{
+  "channelId": "1461049055617745166",
+  "guildId": "1460793541176463466",
+  "title": "🔨 Mesa de Crafteo",
+  "description": "Crea objetos útiles en tu taller. Cada crafteo requiere tiempo y materiales.",
+  "color": "#f39c12",
+  "tasks": [
+    {
+      "name": "Balas Revolver",
+      "durationMinutes": 90,
+      "cooldownMinutes": 1440,
+      "description": "Craftea balas para tu revolver.",
+      "emoji": "🔫",
+      "buttonStyle": "Primary"
+    }
+  ]
+}

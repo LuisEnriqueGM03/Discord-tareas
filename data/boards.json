@@ -1,0 +1,59 @@
+{
+  "boards": [
+    {
+      "id": "ce38d2a7-fc32-4ab2-b049-e70107e133e5",
+      "channelId": "1461049083371327763",
+      "guildId": "1460793541176463466",
+      "title": "👁️‍🗨️ Chester 👁️‍🗨️",
+      "description": "Tareas de chester",
+      "color": "#000000",
+      "createdAt": "2026-01-14T17:28:58.745Z",
+      "messageId": "1461137736567095480",
+      "updatedAt": "2026-01-15T01:37:48.474Z"
+    },
+    {
+      "id": "0dfe38b0-ce4e-4e7a-8df0-f7d26e8a0616",
+      "channelId": "1461049055617745166",
+      "guildId": "1460793541176463466",
+      "title": "🔨 Mesa de Crafteo",
+      "description": "Crea objetos útiles en tu taller. Cada crafteo requiere tiempo y materiales.",
+      "color": "#F39C12",
+      "createdAt": "2026-01-14T17:28:58.748Z",
+      "messageId": "1461137738987339881",
+      "updatedAt": "2026-01-15T01:37:48.475Z"
+    },
+    {
+      "id": "403f96a3-fa03-47a4-b4f6-6070b5807672",
+      "channelId": "1461159573921726484",
+      "guildId": "1460793541176463466",
+      "title": "🌲 Venta de Droga 🌲",
+      "description": "Vender droga en cada territorio",
+      "color": "#006400",
+      "createdAt": "2026-01-15T00:47:52.312Z",
+      "messageId": "1461159949492293632",
+      "updatedAt": "2026-01-15T01:37:48.476Z"
+    },
+    {
+      "id": "a989f746-d27f-46c0-815f-d085214c2e36",
+      "channelId": "1461160433594531942",
+      "guildId": "1460793541176463466",
+      "title": "🧪 Mesa de Pruebas 🧪",
+      "description": "Tareas de prueba para desarrollo",
+      "color": "#FFFFFF",
+      "createdAt": "2026-01-15T00:55:01.056Z",
+      "messageId": "1461161750194950278",
+      "updatedAt": "2026-01-15T01:37:48.478Z"
+    },
+    {
+      "id": "372bf065-0b85-4f29-ae7f-0f99a1e67ece",
+      "channelId": "1461163145988145397",
+      "guildId": "1460793541176463466",
+      "title": "objetos de Banda",
+      "description": "Tareas de banda",
+      "color": "#0000FF",
+      "createdAt": "2026-01-15T01:09:45.077Z",
+      "messageId": "1461165450510729326",
+      "updatedAt": "2026-01-15T01:37:48.470Z"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "channelId": "1461160433594531942",
+  "guildId": "1460793541176463466",
+  "title": "🧪 Mesa de Pruebas 🧪",
+  "description": "Tareas de prueba para desarrollo",
+  "color": "#FFFFFF",
+  "tasks": [
+    {
+      "name": "Prueba",
+      "durationMinutes": 1,
+      "cooldownMinutes": 2,
+      "description": "Craftea una prueba rápida.",
+      "emoji": "🧪",
+      "buttonStyle": "Danger"
+    },
+    {
+      "name": "Prueba 2 Instantaneo",
+      "durationMinutes": 0,
+      "cooldownMinutes": 3,
+      "description": "Prueba instantanea.",
+      "emoji": "⚡",
+      "buttonStyle": "Primary"
+    }
+    ,
+    {
+      "name": "Prueba 3 Multiusos",
+      "durationMinutes": 0,
+      "cooldownMinutes": 3,
+      "maxUses": 2,
+      "description": "Prueba multiusos.",
+      "emoji": "☸️",
+      "buttonStyle": "Primary"
+
+    },
+    {
+      "name": "Prueba 4 Global",
+      "durationMinutes": 0,
+      "cooldownMinutes": 2,
+      "isGlobal": true,
+      "description": "Robo de coche en el territorio marcado",
+      "emoji": "🚗",
+      "buttonStyle": "Primary"
+    }
+  ]
+}

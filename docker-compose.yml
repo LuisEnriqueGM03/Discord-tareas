@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  discord-bot:
+    build: .
+    container_name: discord-task-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+    environment:
+      - NODE_ENV=production
+      - PERSISTENCE_TYPE=typeorm
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-postgres}
+      - DATABASE_NAME=discord_tasks
+    networks:
+      - bot-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: discord-task-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD:-postgres}
+      - POSTGRES_DB=discord_tasks
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - bot-network
+
+  # Bot sin base de datos (solo JSON)
+  discord-bot-json:
+    build: .
+    container_name: discord-task-bot-json
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - PERSISTENCE_TYPE=json
+    networks:
+      - bot-network
+    profiles:
+      - json-only
+
+volumes:
+  postgres_data:
+
+networks:
+  bot-network:
+    driver: bridge

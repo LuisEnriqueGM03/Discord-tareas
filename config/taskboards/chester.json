@@ -1,0 +1,75 @@
+{
+  "channelId": "1461049083371327763",
+  "guildId": "1460793541176463466",
+  "title": "👁️‍🗨️ Chester 👁️‍🗨️",
+  "description": "Tareas de chester",
+  "color": "#000000",
+  "tasks": [
+    {
+      "name": "Molotov Contenedor",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Tira un molotov al contenedor marcado",
+      "emoji": "🍹",
+      "buttonStyle": "Primary"
+    },
+    {
+      "name": "Grafitear Pared",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Grafitea una pared en el territorio marcado",
+      "emoji": "🎨",
+      "buttonStyle": "Primary"
+    },
+    {
+      "name": "Robo Ventanilla",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Roba una ventanilla en el territorio marcado",
+      "emoji": "🪟",
+      "buttonStyle": "Primary"
+    },
+    {
+      "name": "Romper Parkimetros",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Rompe parkimetros en el territorio marcado",
+      "emoji": "🅿️",
+      "buttonStyle": "Primary"
+    },
+    {
+      "name": "Pelea Callejera",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Pelea callejera en el territorio marcado",
+      "emoji": "👊",
+      "buttonStyle": "Primary"
+    },
+    {
+      "name": "Robo Mercancia",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Robo mercancia en el territorio marcado",
+      "emoji": "📦",
+      "buttonStyle": "Primary"
+    },
+    {
+      "name": "Robo de Moto",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "maxUses": 2,
+      "description": "Robo de moto en el territorio marcado",
+      "emoji": "🏍️",
+      "buttonStyle": "Primary"
+    },
+    {
+      "name": "Robo de Coche",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "maxUses": 2,
+      "description": "Robo de coche en el territorio marcado",
+      "emoji": "🚗",
+      "buttonStyle": "Primary"
+    }
+  ]
+}

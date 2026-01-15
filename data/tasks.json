@@ -1,0 +1,186 @@
+{
+  "tasks": [
+    {
+      "id": "0785beac-7372-4487-a2fe-dcdd3f4aed1e",
+      "name": "Molotov Contenedor",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Tira un molotov al contenedor marcado",
+      "emoji": "🍹",
+      "buttonStyle": "Primary",
+      "boardId": "ce38d2a7-fc32-4ab2-b049-e70107e133e5",
+      "createdAt": "2026-01-14T17:28:58.745Z"
+    },
+    {
+      "id": "35718972-8596-4962-8d1f-09c277363034",
+      "name": "Venta de Droga",
+      "durationMinutes": 0,
+      "cooldownMinutes": 15,
+      "description": "Vende droga en el territorio marcado",
+      "emoji": "🌲",
+      "buttonStyle": "Primary",
+      "boardId": "403f96a3-fa03-47a4-b4f6-6070b5807672",
+      "createdAt": "2026-01-15T00:47:52.312Z"
+    },
+    {
+      "id": "a4a5cc37-72ce-4708-a08d-99c879c925dc",
+      "name": "Balas Revolver",
+      "durationMinutes": 90,
+      "cooldownMinutes": 1440,
+      "description": "Craftea balas para tu revolver.",
+      "emoji": "🔫",
+      "buttonStyle": "Primary",
+      "boardId": "0dfe38b0-ce4e-4e7a-8df0-f7d26e8a0616",
+      "createdAt": "2026-01-15T00:55:01.053Z"
+    },
+    {
+      "id": "1a57e3e6-b33b-41cc-b152-48561c69d42d",
+      "name": "Prueba",
+      "durationMinutes": 1,
+      "cooldownMinutes": 2,
+      "description": "Craftea una prueba rápida.",
+      "emoji": "🧪",
+      "buttonStyle": "Danger",
+      "boardId": "a989f746-d27f-46c0-815f-d085214c2e36",
+      "createdAt": "2026-01-15T00:55:01.056Z"
+    },
+    {
+      "id": "d6fa7677-5d7a-4ad7-950d-578272041855",
+      "name": "Prueba 2 Instantaneo",
+      "durationMinutes": 0,
+      "cooldownMinutes": 3,
+      "description": "Prueba instantanea.",
+      "emoji": "⚡",
+      "buttonStyle": "Primary",
+      "boardId": "a989f746-d27f-46c0-815f-d085214c2e36",
+      "createdAt": "2026-01-15T00:55:01.056Z"
+    },
+    {
+      "id": "049705ef-fc53-4418-ac51-bc275cbe7dd3",
+      "name": "Prueba 3 Multiusos",
+      "durationMinutes": 0,
+      "cooldownMinutes": 3,
+      "description": "Prueba multiusos.",
+      "emoji": "☸️",
+      "buttonStyle": "Primary",
+      "maxUses": 2,
+      "boardId": "a989f746-d27f-46c0-815f-d085214c2e36",
+      "createdAt": "2026-01-15T00:55:01.056Z"
+    },
+    {
+      "id": "0b0f1b48-c151-43a4-8336-c2d9ca839dd9",
+      "name": "Grafitear Pared",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Grafitea una pared en el territorio marcado",
+      "emoji": "🎨",
+      "buttonStyle": "Primary",
+      "boardId": "ce38d2a7-fc32-4ab2-b049-e70107e133e5",
+      "createdAt": "2026-01-15T00:58:53.900Z"
+    },
+    {
+      "id": "5d5402b8-dc5e-44e3-87cc-f64c0e3111cf",
+      "name": "Robo Ventanilla",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Roba una ventanilla en el territorio marcado",
+      "emoji": "🪟",
+      "buttonStyle": "Primary",
+      "boardId": "ce38d2a7-fc32-4ab2-b049-e70107e133e5",
+      "createdAt": "2026-01-15T00:58:53.901Z"
+    },
+    {
+      "id": "f3e057de-3439-42d4-b723-7e3069b899f2",
+      "name": "Romper Parkimetros",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Rompe parkimetros en el territorio marcado",
+      "emoji": "🅿️",
+      "buttonStyle": "Primary",
+      "boardId": "ce38d2a7-fc32-4ab2-b049-e70107e133e5",
+      "createdAt": "2026-01-15T00:58:53.901Z"
+    },
+    {
+      "id": "59840ddb-66a9-4846-9c53-b721a8e1490b",
+      "name": "Pelea Callejera",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Pelea callejera en el territorio marcado",
+      "emoji": "👊",
+      "buttonStyle": "Primary",
+      "boardId": "ce38d2a7-fc32-4ab2-b049-e70107e133e5",
+      "createdAt": "2026-01-15T00:58:53.902Z"
+    },
+    {
+      "id": "91b6f4a6-36ec-48b9-87ee-a51291b23b84",
+      "name": "Robo Mercancia",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Robo mercancia en el territorio marcado",
+      "emoji": "📦",
+      "buttonStyle": "Primary",
+      "boardId": "ce38d2a7-fc32-4ab2-b049-e70107e133e5",
+      "createdAt": "2026-01-15T00:58:53.902Z"
+    },
+    {
+      "id": "c771ac41-810c-4877-8673-516481689cbe",
+      "name": "Robo de Moto",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Robo de moto en el territorio marcado",
+      "emoji": "🏍️",
+      "buttonStyle": "Primary",
+      "maxUses": 2,
+      "boardId": "ce38d2a7-fc32-4ab2-b049-e70107e133e5",
+      "createdAt": "2026-01-15T00:58:53.902Z"
+    },
+    {
+      "id": "e7fc9b8c-bb9d-458d-b758-8646729259b9",
+      "name": "Robo de Coche",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Robo de coche en el territorio marcado",
+      "emoji": "🚗",
+      "buttonStyle": "Primary",
+      "maxUses": 2,
+      "boardId": "ce38d2a7-fc32-4ab2-b049-e70107e133e5",
+      "createdAt": "2026-01-15T00:58:53.903Z"
+    },
+    {
+      "id": "4799424d-3e31-4836-86c9-484abed86d2f",
+      "name": "Grafiti territorio",
+      "durationMinutes": 0,
+      "cooldownMinutes": 10080,
+      "description": "Esta tarea es para todo el servidor",
+      "emoji": "🎨",
+      "buttonStyle": "Success",
+      "boardId": "372bf065-0b85-4f29-ae7f-0f99a1e67ece",
+      "createdAt": "2026-01-15T01:09:45.077Z",
+      "isGlobal": true
+    },
+    {
+      "id": "a69256eb-b5c4-44e4-bd07-82ec2448fb0e",
+      "name": "Piezas de Armas",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Esta tarea es para todo el servidor",
+      "emoji": "🧩",
+      "buttonStyle": "Success",
+      "boardId": "372bf065-0b85-4f29-ae7f-0f99a1e67ece",
+      "createdAt": "2026-01-15T01:19:32.874Z",
+      "isGlobal": true
+    },
+    {
+      "id": "2aae7e43-7b38-47db-9531-10fb4f8ec694",
+      "name": "Prueba 4 Global",
+      "durationMinutes": 0,
+      "cooldownMinutes": 2,
+      "description": "Robo de coche en el territorio marcado",
+      "emoji": "🚗",
+      "buttonStyle": "Primary",
+      "boardId": "a989f746-d27f-46c0-815f-d085214c2e36",
+      "createdAt": "2026-01-15T01:19:32.883Z",
+      "isGlobal": true
+    }
+  ]
+}

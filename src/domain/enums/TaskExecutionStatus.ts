@@ -1,0 +1,6 @@
+export enum TaskExecutionStatus {
+  RUNNING = 'RUNNING',
+  COMPLETED = 'COMPLETED',
+  ON_COOLDOWN = 'ON_COOLDOWN',
+  AVAILABLE = 'AVAILABLE'
+}
