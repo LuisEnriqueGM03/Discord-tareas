@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "name": "discord-task-bot",
+  "builds": [
+    {
+      "src": "dist/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "dist/index.js"
+    }
+  ],
+  "env": {
+    "DISCORD_TOKEN": "@discord_token",
+    "DISCORD_CLIENT_ID": "@discord_client_id",
+    "GUILD_ID": "@guild_id",
+    "PERSISTENCE_TYPE": "json",
+    "NODE_ENV": "production",
+    "LOG_LEVEL": "info",
+    "LOG_CHANNEL_TAREAS_INICIADAS": "@log_channel_tareas_iniciadas",
+    "LOG_CHANNEL_TAREAS_TERMINADAS": "@log_channel_tareas_terminadas",
+    "LOG_CHANNEL_COOLDOWN_TERMINADOS": "@log_channel_cooldown_terminados",
+    "LOG_CHANNEL_DM_MANDADOS": "@log_channel_dm_mandados",
+    "TASKBOARDS_CONFIG_PATH": "./config/taskboards",
+    "SCHEDULER_CHECK_INTERVAL": "60000"
+  }
+}
