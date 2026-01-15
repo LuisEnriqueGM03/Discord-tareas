@@ -6,11 +6,20 @@ WORKDIR /app
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias
+# Instalar dependencias (incluyendo devDependencies para TypeScript)
+RUN npm ci
+
+# Copiar código fuente
+COPY src/ ./src/
+COPY tsconfig.json ./
+
+# Compilar TypeScript a JavaScript
+RUN npm run build
+
+# Instalar solo dependencias de producción después de la compilación
 RUN npm ci --only=production
 
-# Copiar código fuente compilado
-COPY dist/ ./dist/
+# Copiar configuración
 COPY config/ ./config/
 COPY data/ ./data/
 
