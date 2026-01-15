@@ -16,7 +16,7 @@ COPY tsconfig.json ./
 # Compilar TypeScript a JavaScript
 RUN npm run build
 
-# Instalar solo dependencias de producción después de la compilación
+# Instalar solo dependencias de producción después de la compilación assaa
 RUN npm ci --only=production
 
 # Copiar configuración
