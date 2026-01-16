@@ -43,19 +43,30 @@ export class AuditLogService {
     const maxUses = task.maxUses || 1;
     const currentUses = execution.currentUses || 1;
     const isInstant = task.durationMinutes === 0;
+    const isGlobal = task.isGlobal || false;
+
+    // Color azul para tareas globales, verde para personales
+    const embedColor = isGlobal ? 0x0099FF : 0x00FF00;
+    const embedTitle = isGlobal ? '🌍 Tarea Global Iniciada' : '🚀 Tarea Iniciada';
 
     const embed = new EmbedBuilder()
-      .setColor(0x00FF00)
-      .setTitle('🚀 Tarea Iniciada')
+      .setColor(embedColor)
+      .setTitle(embedTitle)
       .setThumbnail(user.avatarUrl || null)
       .addFields(
         { name: '👤 Usuario', value: `${user.displayName}\n\`${user.username}\`\n<@${user.id}>`, inline: true },
         { name: '🆔 User ID', value: `\`${user.id}\``, inline: true },
         { name: '\u200B', value: '\u200B', inline: true },
         { name: '📋 Lista', value: boardName, inline: true },
-        { name: '🎯 Tarea', value: task.name, inline: true },
-        { name: '\u200B', value: '\u200B', inline: true }
+        { name: '🎯 Tarea', value: task.name, inline: true }
       );
+
+    // Agregar campo de tipo de tarea
+    if (isGlobal) {
+      embed.addFields({ name: '🌍 Tipo', value: '**GLOBAL**', inline: true });
+    } else {
+      embed.addFields({ name: '\u200B', value: '\u200B', inline: true });
+    }
 
     if (isInstant) {
       embed.addFields(
@@ -288,6 +299,39 @@ export class AuditLogService {
       )
       .setTimestamp()
       .setFooter({ text: 'La tarea ha sido reseteada. El usuario puede iniciarla nuevamente.' });
+
+    await this.sendToChannel(targetChannel, embed);
+  }
+
+  /**
+   * Registra cuando un administrador ejecuta reset de todas las tareas
+   */
+  async logAllTasksReset(
+    resetById: string,
+    resetByUsername: string,
+    cancelledExecutions: number,
+    affectedUsers: number,
+    tasksReset: number,
+    guildId: string
+  ): Promise<void> {
+    const targetChannel = this.channels.tareasReseteadas || this.channels.tareasIniciadas;
+    if (!targetChannel) return;
+
+    const embed = new EmbedBuilder()
+      .setColor(0xFF0000)
+      .setTitle('🔄 RESET COMPLETO DE TODAS LAS TAREAS')
+      .setDescription('Un administrador ha reiniciado TODAS las tareas de TODOS los usuarios')
+      .addFields(
+        { name: '👮 Ejecutado por', value: `<@${resetById}>\n\`${resetByUsername}\``, inline: true },
+        { name: '⏰ Momento', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
+        { name: '\u200B', value: '\u200B', inline: true },
+        { name: '🔄 Ejecuciones Canceladas', value: cancelledExecutions.toString(), inline: true },
+        { name: '👥 Usuarios Afectados', value: affectedUsers.toString(), inline: true },
+        { name: '📋 Tareas Reiniciadas', value: tasksReset.toString(), inline: true },
+        { name: '📊 Estado', value: 'Todas las tareas están disponibles nuevamente', inline: false }
+      )
+      .setTimestamp()
+      .setFooter({ text: `Guild: ${guildId}` });
 
     await this.sendToChannel(targetChannel, embed);
   }

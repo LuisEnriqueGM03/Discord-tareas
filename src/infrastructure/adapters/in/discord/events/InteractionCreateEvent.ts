@@ -1,6 +1,6 @@
 import { Client, Events, Interaction, ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import { ButtonInteractionHandler } from '../handlers/ButtonInteractionHandler';
-import { CreateBoardCommand, ResetTaskCommand, ResetAllTasksCommand, ListTasksCommand, HelpCommand, ViewUserTasksCommand, MyTasksCommand } from '../commands';
+import { CreateBoardCommand, ResetTaskCommand, ResetAllTasksCommand, ResetGlobalTaskCommand, ListTasksCommand, HelpCommand, ViewUserTasksCommand, MyTasksCommand } from '../commands';
 import { Logger } from '../../../../utils/Logger';
 
 export class InteractionCreateEvent {
@@ -8,7 +8,7 @@ export class InteractionCreateEvent {
     private readonly client: Client,
     private readonly buttonHandler: ButtonInteractionHandler,
     private readonly commands: {
-      [key: string]: CreateBoardCommand | ResetTaskCommand | ResetAllTasksCommand | ListTasksCommand | HelpCommand | ViewUserTasksCommand | MyTasksCommand;
+      [key: string]: CreateBoardCommand | ResetTaskCommand | ResetAllTasksCommand | ResetGlobalTaskCommand | ListTasksCommand | HelpCommand | ViewUserTasksCommand | MyTasksCommand;
     }
   ) {}
 

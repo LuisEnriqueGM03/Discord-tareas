@@ -31,6 +31,17 @@
     "description": "Esta tarea es para todo el servidor",
     "emoji": "🚙",
     "buttonStyle": "Success"
+    },
+    {
+      "name": "Platancion de Droga",
+      "durationMinutes": 540,
+      "cooldownMinutes": 1440,
+      "isGlobal": true,
+      "notificationIntervalMinutes": 180,
+      "earlyNotificationMinutes": 10,
+      "description": "Tarea global de vigilancia que dura 9 horas con notificaciones cada 3 horas",
+      "emoji": "🌲",
+      "buttonStyle": "Success"
     }
   ]
 }

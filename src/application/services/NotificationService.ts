@@ -81,4 +81,25 @@ export class NotificationService {
     
     await this.notificationPort.sendDirectMessageEmbed(userId, embed);
   }
+
+  async sendTaskProgressNotification(
+    userId: string,
+    taskName: string,
+    elapsedHours: number,
+    isFinalWarning: boolean = false
+  ): Promise<void> {
+    const title = isFinalWarning ? '⚠️ ¡Tarea por Finalizar!' : '🔔 Notificación de Progreso';
+    const description = isFinalWarning 
+      ? `Tu tarea de **${taskName}** está por terminar en **10 minutos**`
+      : `Han pasado **${elapsedHours} horas** desde que iniciaste **${taskName}**`;
+    
+    const embed = new EmbedBuilder()
+      .setColor(isFinalWarning ? 0xFF9900 : 0x00CCFF)
+      .setTitle(title)
+      .setDescription(description)
+      .setTimestamp()
+      .setFooter({ text: isFinalWarning ? '¡Prepárate!' : '¡Sigue adelante!' });
+    
+    await this.notificationPort.sendDirectMessageEmbed(userId, embed);
+  }
 }

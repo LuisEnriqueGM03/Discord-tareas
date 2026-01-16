@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { TaskExecution } from '../../domain/models/TaskExecution';
+import { Task } from '../../domain/models/Task';
 import { UserTaskStatus } from '../../domain/models/UserTaskStatus';
 import { TaskExecutionStatus } from '../../domain/enums/TaskExecutionStatus';
 import { ITaskExecutionRepository } from '../../domain/ports/out/ITaskExecutionRepository';
@@ -27,6 +28,73 @@ export class TaskExecutionService {
     private readonly auditLogService: AuditLogService,
     private readonly client: Client
   ) {}
+
+  private schedulePeriodicNotifications(
+    execution: TaskExecution,
+    task: Task,
+    realUserId: string
+  ): void {
+    if (!task.notificationIntervalMinutes || task.durationMinutes === 0) {
+      return;
+    }
+
+    const intervalMs = task.notificationIntervalMinutes * 60 * 1000;
+    const durationMs = task.durationMinutes * 60 * 1000;
+    const earlyNotificationMs = (task.earlyNotificationMinutes || 0) * 60 * 1000;
+
+    let currentTimeMs = intervalMs;
+    let notificationCount = 0;
+
+    // Programar notificaciones intermedias cada X horas
+    while (currentTimeMs < durationMs - earlyNotificationMs) {
+      notificationCount++;
+      const hours = currentTimeMs / (60 * 60 * 1000);
+      
+      // Crear un timeout para cada notificación
+      setTimeout(async () => {
+        try {
+          await this.notificationPort.sendDirectMessageEmbed(
+            realUserId,
+            new EmbedBuilder()
+              .setColor(0x00CCFF)
+              .setTitle('🔔 Notificación de Progreso')
+              .setDescription(`Han pasado **${hours} horas** desde que iniciaste **${task.name}**`)
+              .setTimestamp()
+              .setFooter({ text: '¡Sigue adelante!' })
+          );
+          Logger.info(`Notificación intermedia ${notificationCount} enviada para tarea ${task.name} al usuario ${realUserId}`);
+        } catch (error) {
+          Logger.error(`Error enviando notificación intermedia para tarea ${task.name}:`, error);
+        }
+      }, currentTimeMs);
+
+      currentTimeMs += intervalMs;
+    }
+
+    // Programar notificación final (10 minutos antes si está configurado)
+    if (earlyNotificationMs > 0 && durationMs > earlyNotificationMs) {
+      const finalNotificationTime = durationMs - earlyNotificationMs;
+      
+      setTimeout(async () => {
+        try {
+          await this.notificationPort.sendDirectMessageEmbed(
+            realUserId,
+            new EmbedBuilder()
+              .setColor(0xFF9900)
+              .setTitle('⚠️ ¡Tarea por Finalizar!')
+              .setDescription(`Tu tarea de **${task.name}** está por terminar en **${task.earlyNotificationMinutes} minutos**`)
+              .setTimestamp()
+              .setFooter({ text: '¡Prepárate!' })
+          );
+          Logger.info(`Notificación final enviada para tarea ${task.name} al usuario ${realUserId}`);
+        } catch (error) {
+          Logger.error(`Error enviando notificación final para tarea ${task.name}:`, error);
+        }
+      }, finalNotificationTime);
+    }
+
+    Logger.info(`Programadas ${notificationCount} notificaciones intermedias + 1 final para tarea ${task.name}`);
+  }
 
   private async getUserInfo(userId: string): Promise<AuditUserInfo> {
     try {
@@ -137,6 +205,15 @@ export class TaskExecutionService {
       // Tarea con duración - programar finalización
       const completionTime = new Date(Date.now() + task.durationMinutes * 60 * 1000);
       this.schedulerPort.scheduleTaskCompletion(execution.id, completionTime);
+
+      // Programar notificaciones intermedias si están configuradas
+      if (task.notificationIntervalMinutes && task.notificationIntervalMinutes > 0) {
+        this.schedulePeriodicNotifications(
+          execution,
+          task,
+          params.userId // Usar el userId real del usuario que inició la tarea
+        );
+      }
     }
 
     const savedExecution = await this.taskExecutionRepository.save(execution);

@@ -1,5 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { TaskExecutionService } from '../../../../../application/services/TaskExecutionService';
+import { AuditLogService } from '../../../../../application/services/AuditLogService';
+import { Logger } from '../../../../utils/Logger';
 
 export class ResetAllTasksCommand {
   public readonly data = new SlashCommandBuilder()
@@ -8,7 +10,8 @@ export class ResetAllTasksCommand {
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
   constructor(
-    private readonly taskExecutionService: TaskExecutionService
+    private readonly taskExecutionService: TaskExecutionService,
+    private readonly auditLogService: AuditLogService
   ) {}
 
   async execute(interaction: CommandInteraction): Promise<void> {
@@ -31,6 +34,22 @@ export class ResetAllTasksCommand {
         .setFooter({ text: `Reiniciado por ${interaction.user.username}` });
 
       await interaction.editReply({ embeds: [embed] });
+
+      // Registrar en auditoría si hubo tareas reseteadas
+      if (result.cancelledExecutions > 0) {
+        try {
+          await this.auditLogService.logAllTasksReset(
+            interaction.user.id,
+            interaction.user.username,
+            result.cancelledExecutions,
+            result.affectedUsers,
+            result.tasksReset,
+            interaction.guildId || 'Unknown'
+          );
+        } catch (error) {
+          Logger.error('Error registrando auditoría de reset completo:', error);
+        }
+      }
     } catch (error) {
       const errorEmbed = new EmbedBuilder()
         .setColor(0xFF0000)

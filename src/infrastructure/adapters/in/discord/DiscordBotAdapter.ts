@@ -1,11 +1,13 @@
 import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
 import { ReadyEvent, InteractionCreateEvent } from './events';
 import { ButtonInteractionHandler } from './handlers';
-import { CreateBoardCommand, ResetTaskCommand, ResetAllTasksCommand, ListTasksCommand, HelpCommand, ViewUserTasksCommand, MyTasksCommand } from './commands';
+import { CreateBoardCommand, ResetTaskCommand, ResetAllTasksCommand, ResetGlobalTaskCommand, ListTasksCommand, HelpCommand, ViewUserTasksCommand, MyTasksCommand } from './commands';
 import { TaskExecutionService } from '../../../../application/services/TaskExecutionService';
 import { TaskService } from '../../../../application/services/TaskService';
 import { TaskBoardService } from '../../../../application/services/TaskBoardService';
 import { INotificationPort } from '../../../../domain/ports/out/INotificationPort';
+import { ITaskExecutionRepository } from '../../../../domain/ports/out/ITaskExecutionRepository';
+import { AuditLogService } from '../../../../application/services/AuditLogService';
 import { Logger } from '../../../utils/Logger';
 
 export class DiscordBotAdapter {
@@ -19,6 +21,8 @@ export class DiscordBotAdapter {
     private readonly taskService: TaskService,
     private readonly taskBoardService: TaskBoardService,
     private readonly notificationPort: INotificationPort,
+    private readonly taskExecutionRepository: ITaskExecutionRepository,
+    private readonly auditLogService: AuditLogService,
     private readonly configPath: string,
     client?: Client
   ) {
@@ -70,7 +74,8 @@ export class DiscordBotAdapter {
     // Commands
     const createBoardCommand = new CreateBoardCommand(this.taskBoardService);
     const resetTaskCommand = new ResetTaskCommand(this.taskExecutionService, this.taskService);
-    const resetAllTasksCommand = new ResetAllTasksCommand(this.taskExecutionService);
+    const resetAllTasksCommand = new ResetAllTasksCommand(this.taskExecutionService, this.auditLogService);
+    const resetGlobalTaskCommand = new ResetGlobalTaskCommand(this.taskExecutionService, this.taskService, this.taskExecutionRepository);
     const listTasksCommand = new ListTasksCommand(this.taskBoardService);
     const helpCommand = new HelpCommand();
     const viewUserTasksCommand = new ViewUserTasksCommand(this.taskExecutionService, this.taskService, this.taskBoardService);
@@ -91,6 +96,7 @@ export class DiscordBotAdapter {
         createboard: createBoardCommand,
         'reset-task': resetTaskCommand,
         'reset-all-tasks': resetAllTasksCommand,
+        'reset-global-task': resetGlobalTaskCommand,
         'list-tasks': listTasksCommand,
         ayuda: helpCommand,
         'ver-tareas': viewUserTasksCommand,
@@ -104,7 +110,8 @@ export class DiscordBotAdapter {
     try {
       const createBoardCommand = new CreateBoardCommand(this.taskBoardService);
       const resetTaskCommand = new ResetTaskCommand(this.taskExecutionService, this.taskService);
-      const resetAllTasksCommand = new ResetAllTasksCommand(this.taskExecutionService);
+      const resetAllTasksCommand = new ResetAllTasksCommand(this.taskExecutionService, this.auditLogService);
+      const resetGlobalTaskCommand = new ResetGlobalTaskCommand(this.taskExecutionService, this.taskService, this.taskExecutionRepository);
       const listTasksCommand = new ListTasksCommand(this.taskBoardService);
       const helpCommand = new HelpCommand();
       const viewUserTasksCommand = new ViewUserTasksCommand(this.taskExecutionService, this.taskService, this.taskBoardService);
@@ -114,6 +121,7 @@ export class DiscordBotAdapter {
         createBoardCommand.data.toJSON(),
         resetTaskCommand.data.toJSON(),
         resetAllTasksCommand.data.toJSON(),
+        resetGlobalTaskCommand.data.toJSON(),
         listTasksCommand.data.toJSON(),
         helpCommand.data.toJSON(),
         viewUserTasksCommand.data.toJSON(),
