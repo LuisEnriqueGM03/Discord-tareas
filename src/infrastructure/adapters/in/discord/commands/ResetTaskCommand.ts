@@ -21,7 +21,7 @@ export class ResetTaskCommand {
     .addStringOption(option =>
       option
         .setName('task-id')
-        .setDescription('El UUID de la tarea a reiniciar (ej: 32421ed3-68ed-4d63-89fe-4f446661318c)')
+        .setDescription('El UUID de la tarea o ejecución a reiniciar')
         .setRequired(true)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
@@ -33,11 +33,11 @@ export class ResetTaskCommand {
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     const targetUser = interaction.options.getUser('usuario');
-    const taskId = interaction.options.getString('task-id');
+    const inputId = interaction.options.getString('task-id');
 
-    if (!targetUser || !taskId) {
+    if (!targetUser || !inputId) {
       await interaction.reply({
-        content: '❌ Debes proporcionar un usuario y el UUID de la tarea.',
+        content: '❌ Debes proporcionar un usuario y el UUID de la tarea o ejecución.',
         ephemeral: true
       });
       return;
@@ -46,20 +46,40 @@ export class ResetTaskCommand {
     try {
       await interaction.deferReply();
 
-      // Buscar la tarea por UUID
-      const task = await this.taskService.findById(taskId);
-
-      if (!task) {
-        await interaction.editReply({
-          content: `❌ No se encontró ninguna tarea con el UUID "${taskId}".`
-        });
-        return;
+      // Primero intentar encontrar por execution ID
+      let taskId: string | undefined;
+      
+      try {
+        const execution = await this.taskExecutionService.findExecutionById(inputId);
+        if (execution && execution.userId === targetUser.id) {
+          taskId = execution.taskId;
+        }
+      } catch (error) {
+        // No es un execution ID válido, intentar como task ID
       }
+
+      // Si no se encontró como execution ID, intentar como task ID
+      if (!taskId) {
+        try {
+          const task = await this.taskService.findById(inputId);
+          if (task) {
+            taskId = task.id;
+          }
+        } catch (error) {
+          await interaction.editReply({
+            content: `❌ No se encontró ninguna tarea o ejecución con el UUID "${inputId}".`
+          });
+          return;
+        }
+      }
+
+      // Obtener la tarea para mostrar su nombre
+      const task = await this.taskService.findById(taskId!);
 
       // Reiniciar la tarea
       const result = await this.taskExecutionService.resetTask({
         userId: targetUser.id,
-        taskId: task.id,
+        taskId: taskId!,
         resetBy: interaction.user.id,
         guildId: interaction.guildId || ''
       });

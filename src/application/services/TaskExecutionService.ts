@@ -615,4 +615,8 @@ export class TaskExecutionService {
       tasksReset
     };
   }
+
+  async findExecutionById(executionId: string): Promise<TaskExecution | null> {
+    return this.taskExecutionRepository.findById(executionId);
+  }
 }
