@@ -3,6 +3,7 @@ export interface AuditLogChannelsConfig {
   tareasTerminadas?: string;
   cooldownTerminados?: string;
   dmMandados?: string;
+  tareasReseteadas?: string;
 }
 
 export interface EnvironmentConfig {
@@ -23,7 +24,8 @@ export function loadEnvironmentConfig(): EnvironmentConfig {
       tareasIniciadas: process.env.LOG_CHANNEL_TAREAS_INICIADAS || undefined,
       tareasTerminadas: process.env.LOG_CHANNEL_TAREAS_TERMINADAS || undefined,
       cooldownTerminados: process.env.LOG_CHANNEL_COOLDOWN_TERMINADOS || undefined,
-      dmMandados: process.env.LOG_CHANNEL_DM_MANDADOS || undefined
+      dmMandados: process.env.LOG_CHANNEL_DM_MANDADOS || undefined,
+      tareasReseteadas: process.env.LOG_CHANNEL_TAREAS_RESETEADAS || undefined
     }
   };
 }

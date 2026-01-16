@@ -247,7 +247,21 @@ export class TaskExecutionService {
   async completeTask(taskExecutionId: string): Promise<void> {
     const execution = await this.taskExecutionRepository.findById(taskExecutionId);
     if (!execution) {
+      Logger.info(`Ejecución ${taskExecutionId} no encontrada para completar - probablemente fue reseteada`);
       return;
+    }
+
+    // Verificar si la ejecución fue reseteada
+    const now = new Date();
+    const availableAt = execution.availableAt ? new Date(execution.availableAt) : null;
+    const completedAt = execution.completedAt ? new Date(execution.completedAt) : null;
+    
+    if (availableAt && completedAt && availableAt <= now) {
+      const timeDiff = Math.abs(availableAt.getTime() - completedAt.getTime());
+      if (timeDiff < 5000) {
+        Logger.info(`Ejecución ${taskExecutionId} fue reseteada manualmente - omitiendo completado`);
+        return;
+      }
     }
 
     const task = await this.taskRepository.findById(execution.taskId);
@@ -255,7 +269,6 @@ export class TaskExecutionService {
       return;
     }
 
-    const now = new Date();
     // El cooldown corre EN PARALELO con la duración, no después
     // availableAt = startedAt + max(durationMinutes, cooldownMinutes)
     const maxTimeMs = Math.max(task.durationMinutes, task.cooldownMinutes) * 60 * 1000;
@@ -345,7 +358,23 @@ export class TaskExecutionService {
     
     const execution = await this.taskExecutionRepository.findById(actualId);
     if (!execution) {
+      Logger.info(`Ejecución ${actualId} no encontrada para notificación de cooldown - probablemente fue eliminada`);
       return;
+    }
+
+    // Verificar si la tarea fue reseteada (availableAt está en el pasado muy cercano a completedAt)
+    const now = new Date();
+    const availableAt = execution.availableAt ? new Date(execution.availableAt) : null;
+    const completedAt = execution.completedAt ? new Date(execution.completedAt) : null;
+    
+    // Si availableAt está en el pasado y es muy cercano a completedAt (menos de 5 segundos de diferencia),
+    // significa que fue reseteada manualmente y no debemos enviar notificación
+    if (availableAt && completedAt && availableAt <= now) {
+      const timeDiff = Math.abs(availableAt.getTime() - completedAt.getTime());
+      if (timeDiff < 5000) { // Menos de 5 segundos de diferencia
+        Logger.info(`Ejecución ${actualId} fue reseteada manualmente - omitiendo notificación de cooldown`);
+        return;
+      }
     }
 
     const task = await this.taskRepository.findById(execution.taskId);
@@ -485,10 +514,12 @@ export class TaskExecutionService {
       };
     }
 
-    // Cancelar schedulers pendientes
+    // Cancelar schedulers pendientes ANTES de actualizar el estado
     if (executionToReset.id) {
+      Logger.info(`Cancelando schedulers para ejecución ${executionToReset.id}`);
       this.schedulerPort.cancelScheduledTask(executionToReset.id);
       this.schedulerPort.cancelScheduledTask(`cooldown_${executionToReset.id}`);
+      Logger.info(`Schedulers cancelados para ejecución ${executionToReset.id}`);
     }
 
     // Marcar la ejecución como cancelada y disponible inmediatamente
@@ -519,7 +550,8 @@ export class TaskExecutionService {
         userInfo,
         task,
         boardName,
-        params.resetBy
+        params.resetBy,
+        executionToReset.id
       );
     } catch (error) {
       Logger.error('Error registrando auditoría de reset:', error);

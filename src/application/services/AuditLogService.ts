@@ -9,6 +9,7 @@ export interface AuditLogChannels {
   tareasTerminadas?: string;
   cooldownTerminados?: string;
   dmMandados?: string;
+  tareasReseteadas?: string;
 }
 
 export interface AuditUserInfo {
@@ -262,9 +263,12 @@ export class AuditLogService {
     user: AuditUserInfo,
     task: Task,
     boardName: string,
-    resetById: string
+    resetById: string,
+    executionId: string
   ): Promise<void> {
-    if (!this.channels.tareasIniciadas) return;
+    // Usar canal dedicado de resets o fallback al de tareas iniciadas
+    const targetChannel = this.channels.tareasReseteadas || this.channels.tareasIniciadas;
+    if (!targetChannel) return;
 
     const embed = new EmbedBuilder()
       .setColor(0xFFA500)
@@ -279,12 +283,13 @@ export class AuditLogService {
         { name: '\u200B', value: '\u200B', inline: true },
         { name: '👮 Reiniciado por', value: `<@${resetById}>`, inline: true },
         { name: '⏰ Momento', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
-        { name: '\u200B', value: '\u200B', inline: true }
+        { name: '\u200B', value: '\u200B', inline: true },
+        { name: '🔖 Execution ID', value: `\`${executionId}\``, inline: false }
       )
       .setTimestamp()
-      .setFooter({ text: 'El usuario puede iniciar la tarea nuevamente' });
+      .setFooter({ text: 'La tarea ha sido reseteada. El usuario puede iniciarla nuevamente.' });
 
-    await this.sendToChannel(this.channels.tareasIniciadas, embed);
+    await this.sendToChannel(targetChannel, embed);
   }
 
   private async sendToChannel(channelId: string, embed: EmbedBuilder): Promise<void> {
