@@ -38,6 +38,14 @@
       "buttonStyle": "Primary"
     },
     {
+      "name": "Robo de Ruedas",
+      "durationMinutes": 0,
+      "cooldownMinutes": 1440,
+      "description": "Roba ruedas en el territorio marcado",
+      "emoji": "🛞",
+      "buttonStyle": "Primary"
+    },
+    {
       "name": "Pelea Callejera",
       "durationMinutes": 0,
       "cooldownMinutes": 1440,
