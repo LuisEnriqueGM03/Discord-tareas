@@ -1,7 +1,7 @@
 {
   "channelId": "1461159573921726484",
   "guildId": "1460793541176463466",
-  "title": "🌲 Venta de Droga 🌲",
+  "title": "🌲 Droga 🌲",
   "description": "Vender droga en cada territorio",
   "color": "#006400",
   "tasks": [
@@ -11,6 +11,14 @@
       "cooldownMinutes": 15,
       "description": "Vende droga en el territorio marcado",
       "emoji": "🌲",
+      "buttonStyle": "Primary"
+    },
+    {
+      "name": "Run de Droga Outsider",
+      "durationMinutes": 0,
+      "cooldownMinutes": 540,
+      "description": "Vende droga en el territorio marcado",
+      "emoji": "🚙",
       "buttonStyle": "Primary"
     }
   ]

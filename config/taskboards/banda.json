@@ -22,6 +22,15 @@
     "description": "Esta tarea es para todo el servidor",
     "emoji": "🧩",
     "buttonStyle": "Success"
+    },
+    {
+    "name": "Run de Banda",
+    "durationMinutes": 0,
+    "cooldownMinutes": 540,
+    "isGlobal": true,
+    "description": "Esta tarea es para todo el servidor",
+    "emoji": "🚙",
+    "buttonStyle": "Success"
     }
   ]
 }
