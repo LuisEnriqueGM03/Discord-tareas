@@ -6,10 +6,34 @@
   "color": "#f39c12",
   "tasks": [
     {
-      "name": "Balas Revolver",
+      "name": "Munición del .38",
       "durationMinutes": 90,
       "cooldownMinutes": 1440,
       "description": "Craftea balas para tu revolver.",
+      "emoji": "📦",
+      "buttonStyle": "Danger"
+    },
+    {
+      "name": "38 Subnose",
+      "durationMinutes": 80,
+      "cooldownMinutes": 2880,
+      "description": "Craftea un revólver .38 Subnose.",
+      "emoji": "🔫",
+      "buttonStyle": "Primary"
+    },
+    {
+      "name": "Munición del .45 ACP",
+      "durationMinutes": 120,
+      "cooldownMinutes": 2880,
+      "description": "Craftea balas para tu revolver.",
+      "emoji": "📦",
+      "buttonStyle": "Danger"
+    },
+    {
+      "name": "Pistola SNS",
+      "durationMinutes": 360,
+      "cooldownMinutes": 5760,
+      "description": "Craftea una pistola SNS.",
       "emoji": "🔫",
       "buttonStyle": "Primary"
     }
