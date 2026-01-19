@@ -5,4 +5,5 @@ export interface INotificationPort {
   sendDirectMessageEmbed(userId: string, embed: EmbedBuilder): Promise<void>;
   sendEphemeralReply(interaction: ButtonInteraction, message: string): Promise<void>;
   sendEphemeralEmbed(interaction: ButtonInteraction, embed: EmbedBuilder): Promise<void>;
+  sendChannelMessageWithAutoDelete(channelId: string, embed: EmbedBuilder, deleteAfterMs: number): Promise<void>;
 }

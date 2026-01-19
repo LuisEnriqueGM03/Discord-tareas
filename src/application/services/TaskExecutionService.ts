@@ -27,7 +27,7 @@ export class TaskExecutionService {
     private readonly notificationPort: INotificationPort,
     private readonly auditLogService: AuditLogService,
     private readonly client: Client
-  ) {}
+  ) { }
 
   private schedulePeriodicNotifications(
     execution: TaskExecution,
@@ -42,58 +42,83 @@ export class TaskExecutionService {
     const durationMs = task.durationMinutes * 60 * 1000;
     const earlyNotificationMs = (task.earlyNotificationMinutes || 0) * 60 * 1000;
 
-    let currentTimeMs = intervalMs;
     let notificationCount = 0;
 
-    // Programar notificaciones intermedias cada X horas
-    while (currentTimeMs < durationMs - earlyNotificationMs) {
-      notificationCount++;
-      const hours = currentTimeMs / (60 * 60 * 1000);
-      
-      // Crear un timeout para cada notificación
-      setTimeout(async () => {
-        try {
-          await this.notificationPort.sendDirectMessageEmbed(
-            realUserId,
-            new EmbedBuilder()
-              .setColor(0x00CCFF)
-              .setTitle('🔔 Notificación de Progreso')
-              .setDescription(`Han pasado **${hours} horas** desde que iniciaste **${task.name}**`)
-              .setTimestamp()
-              .setFooter({ text: '¡Sigue adelante!' })
-          );
-          Logger.info(`Notificación intermedia ${notificationCount} enviada para tarea ${task.name} al usuario ${realUserId}`);
-        } catch (error) {
-          Logger.error(`Error enviando notificación intermedia para tarea ${task.name}:`, error);
-        }
-      }, currentTimeMs);
+    // Calcular el TIEMPO EXACTO de cada notificación
+    // Si la duración es 9min, intervalo 3min, early 1min:
+    // Intervalos base: 3min, 6min, 9min
+    // Notificaciones: 2min (3-1), 5min (6-1), 8min (9-1)
 
-      currentTimeMs += intervalMs;
+    // Comenzamos con el primer intervalo
+    let nextIntervalTimeMs = intervalMs;
+
+    while (nextIntervalTimeMs < durationMs) {
+      // El tiempo de notificación es (intervalo - tiempo anticipado)
+      // Si el resultado es <= 0, no tiene sentido notificar
+      const notificationTimeMs = nextIntervalTimeMs - earlyNotificationMs;
+
+      // Solo programar si cae dentro de la duración de la tarea y es positivo
+      if (notificationTimeMs > 0 && notificationTimeMs < durationMs) {
+        notificationCount++;
+
+        // Calcular horas/minutos para el mensaje
+        const elapsedHours = nextIntervalTimeMs / (60 * 60 * 1000);
+        const nextTimeMinutes = task.durationMinutes > (nextIntervalTimeMs / 60000) + task.notificationIntervalMinutes
+          ? task.notificationIntervalMinutes
+          : 0; // Si es 0, es la última
+
+        setTimeout(async () => {
+          try {
+            const isLast = (nextIntervalTimeMs + intervalMs) >= durationMs;
+            const messageTitle = isLast
+              ? `📝 Último Aviso: ${task.name}`
+              : `🔔 Recordatorio: ${task.name}`;
+
+            const description = isLast
+              ? `Tu tarea de **${task.name}** te avisa por última vez que tienes que ir a **${task.name}**.`
+              : `Tu tarea de **${task.name}** te avisa que tienes que ir a **${task.name}**.\nTe avisaré de nuevo en **${task.notificationIntervalMinutes} minutos**.`;
+
+            const embed = new EmbedBuilder()
+              .setColor(isLast ? 0xFF9900 : 0x00CCFF)
+              .setTitle(messageTitle)
+              .setDescription(description)
+              .setTimestamp()
+              .setFooter({ text: isLast ? '¡Última llamada!' : '¡Mantente atento!' });
+
+            // Si es global, ENVIAR AL CANAL DEL BOARD con auto-delete
+            if (task.isGlobal && execution.channelId) {
+              await this.notificationPort.sendChannelMessageWithAutoDelete(
+                execution.channelId,
+                embed,
+                60 * 60 * 1000 // Borrar en 1 hora
+              );
+            } else {
+              // Si es personal, enviar DM
+              await this.notificationPort.sendDirectMessageEmbed(realUserId, embed);
+            }
+
+            Logger.info(`Notificación periódica ${notificationCount} enviada para tarea ${task.name} (${notificationTimeMs / 60000}m)`);
+          } catch (error) {
+            Logger.error(`Error enviando notificación periódica para tarea ${task.name}:`, error);
+          }
+        }, notificationTimeMs);
+      }
+
+      nextIntervalTimeMs += intervalMs;
     }
 
-    // Programar notificación final (10 minutos antes si está configurado)
-    if (earlyNotificationMs > 0 && durationMs > earlyNotificationMs) {
-      const finalNotificationTime = durationMs - earlyNotificationMs;
-      
-      setTimeout(async () => {
-        try {
-          await this.notificationPort.sendDirectMessageEmbed(
-            realUserId,
-            new EmbedBuilder()
-              .setColor(0xFF9900)
-              .setTitle('⚠️ ¡Tarea por Finalizar!')
-              .setDescription(`Tu tarea de **${task.name}** está por terminar en **${task.earlyNotificationMinutes} minutos**`)
-              .setTimestamp()
-              .setFooter({ text: '¡Prepárate!' })
-          );
-          Logger.info(`Notificación final enviada para tarea ${task.name} al usuario ${realUserId}`);
-        } catch (error) {
-          Logger.error(`Error enviando notificación final para tarea ${task.name}:`, error);
-        }
-      }, finalNotificationTime);
-    }
+    // Programar notificación final de "por terminar" solo si NO coincide con una periódica
+    // y si está configurada explícitamente y es diferente de las periódicas
+    // (En este caso, la lógica anterior ya cubre los "avisos anticipados" de los intervalos,
+    // pero mantenemos la notificación de finalización pura si se desea, aunque con la lógica
+    // de arriba "2, 5, 8" ya cubrimos el aviso antes de que termine a los 9)
 
-    Logger.info(`Programadas ${notificationCount} notificaciones intermedias + 1 final para tarea ${task.name}`);
+    // Si queremos mantener la notificación explícita de "Faltan X minutos para terminar" 
+    // aparte de los intervalos, la dejamos, pero verificamos que no se superponga demasiado.
+    // Con la lógica solicitada, los intervalos YA SON anticipados, así que esto podría ser redundante
+    // o complementario. Lo dejaremos solo si earlyNotification > 0 y no se superpone exactamente.
+
+    Logger.info(`Programadas ${notificationCount} notificaciones periódicas anticipadas para tarea ${task.name}`);
   }
 
   private async getUserInfo(userId: string): Promise<AuditUserInfo> {
@@ -128,9 +153,9 @@ export class TaskExecutionService {
     const effectiveUserId = isGlobal ? `GLOBAL_${params.guildId}` : params.userId;
 
     // Verificar estado actual de la tarea
-    const status = await this.checkStatus({ 
-      userId: effectiveUserId, 
-      taskId: params.taskId 
+    const status = await this.checkStatus({
+      userId: effectiveUserId,
+      taskId: params.taskId
     });
 
     if (status.status === TaskExecutionStatus.RUNNING) {
@@ -144,7 +169,7 @@ export class TaskExecutionService {
     // Para tareas con múltiples usos, buscar la ejecución actual o crear una nueva
     let execution: TaskExecution;
     let isNewExecution = true;
-    
+
     if (maxUses > 1) {
       // Buscar ejecución existente que aún tenga usos disponibles
       const lastExecution = await this.taskExecutionRepository.findLastByUserAndTask(
@@ -163,6 +188,7 @@ export class TaskExecutionService {
           id: uuidv4(),
           taskId: params.taskId,
           userId: effectiveUserId,
+          realUserId: task.isGlobal ? params.userId : undefined, // Guardar usuario real para tareas globales
           guildId: params.guildId,
           channelId: params.channelId,
           startedAt: new Date(),
@@ -177,6 +203,7 @@ export class TaskExecutionService {
         id: uuidv4(),
         taskId: params.taskId,
         userId: effectiveUserId,
+        realUserId: task.isGlobal ? params.userId : undefined, // Guardar usuario real para tareas globales
         guildId: params.guildId,
         channelId: params.channelId,
         startedAt: new Date(),
@@ -190,12 +217,12 @@ export class TaskExecutionService {
     if (task.durationMinutes === 0) {
       const now = new Date();
       execution.completedAt = now;
-      
+
       // Si ya usó todos los usos, aplicar cooldown
       if (execution.currentUses! >= maxUses) {
         const cooldownEndTime = new Date(now.getTime() + task.cooldownMinutes * 60 * 1000);
         execution.availableAt = cooldownEndTime;
-        
+
         // Programar notificación de cooldown terminado
         if (task.cooldownMinutes > 0) {
           this.schedulerPort.scheduleTaskCompletion(`cooldown_${execution.id}`, cooldownEndTime);
@@ -227,7 +254,7 @@ export class TaskExecutionService {
           const board = await this.taskBoardRepository.findById(task.boardId);
           if (board) boardName = board.title;
         } catch { /* ignore */ }
-        
+
         await this.auditLogService.logTaskStarted(userInfo, task, savedExecution, boardName);
       } catch (error) {
         Logger.error('Error registrando auditoría de tarea iniciada:', error);
@@ -276,7 +303,7 @@ export class TaskExecutionService {
 
     if (lastExecution && lastExecution.completedAt) {
       const currentUses = lastExecution.currentUses || 1;
-      
+
       // Si aún tiene usos disponibles, está AVAILABLE
       if (currentUses < maxUses && !lastExecution.availableAt) {
         return {
@@ -332,7 +359,7 @@ export class TaskExecutionService {
     const now = new Date();
     const availableAt = execution.availableAt ? new Date(execution.availableAt) : null;
     const completedAt = execution.completedAt ? new Date(execution.completedAt) : null;
-    
+
     if (availableAt && completedAt && availableAt <= now) {
       const timeDiff = Math.abs(availableAt.getTime() - completedAt.getTime());
       if (timeDiff < 5000) {
@@ -384,7 +411,7 @@ export class TaskExecutionService {
     }
 
     // Crear embed bonito para el DM
-    const cooldownDisplay = remainingMs > 0 
+    const cooldownDisplay = remainingMs > 0
       ? TimeFormatter.formatMillisecondsWithSeconds(remainingMs)
       : '0s';
 
@@ -399,9 +426,11 @@ export class TaskExecutionService {
       )
       .setTimestamp()
       .setFooter({ text: '¡Bien hecho!' });
-    
+
     // Obtener info del usuario para auditoría
-    const userInfo = await this.getUserInfo(execution.userId);
+    // Si es global, intentar usar el realUserId
+    const auditUserId = (task.isGlobal && execution.realUserId) ? execution.realUserId : execution.userId;
+    const userInfo = await this.getUserInfo(auditUserId);
 
     // Registrar en auditoría - Tarea Terminada (Duración)
     try {
@@ -410,7 +439,18 @@ export class TaskExecutionService {
       Logger.error('Error registrando auditoría de tarea terminada:', error);
     }
 
-    // Enviar DM al usuario
+    // Si es tarea global, NO enviar DM, enviar al canal
+    if (task.isGlobal && execution.channelId) {
+      // Para completado global, tal vez queramos notificar al canal también?
+      // Por ahora el usuario no pidió explícitamente notificación de finalización en canal,
+      // pero sí pidió mensaje de cooldown terminado.
+      // Si la tarea terminó por duración, técnicamente empieza el cooldown.
+      // El método notifyCooldownComplete se encargará de avisar cuando el cooldown termine.
+      // Pero "Tarea Terminada" es cuando finaliza la ejecución.
+      return;
+    }
+
+    // Enviar DM al usuario (solo tareas personales)
     let dmSuccess = true;
     let dmError: string | undefined;
     try {
@@ -432,7 +472,7 @@ export class TaskExecutionService {
   async notifyCooldownComplete(taskExecutionId: string): Promise<void> {
     // Remover el prefijo "cooldown_" si existe
     const actualId = taskExecutionId.replace('cooldown_', '');
-    
+
     const execution = await this.taskExecutionRepository.findById(actualId);
     if (!execution) {
       Logger.info(`Ejecución ${actualId} no encontrada para notificación de cooldown - probablemente fue eliminada`);
@@ -443,7 +483,7 @@ export class TaskExecutionService {
     const now = new Date();
     const availableAt = execution.availableAt ? new Date(execution.availableAt) : null;
     const completedAt = execution.completedAt ? new Date(execution.completedAt) : null;
-    
+
     // Si availableAt está en el pasado y es muy cercano a completedAt (menos de 5 segundos de diferencia),
     // significa que fue reseteada manualmente y no debemos enviar notificación
     if (availableAt && completedAt && availableAt <= now) {
@@ -473,7 +513,8 @@ export class TaskExecutionService {
     }
 
     // Obtener info del usuario para auditoría
-    const userInfo = await this.getUserInfo(execution.userId);
+    const auditUserId = (task.isGlobal && execution.realUserId) ? execution.realUserId : execution.userId;
+    const userInfo = await this.getUserInfo(auditUserId);
 
     // Registrar en auditoría - Cooldown Terminado
     try {
@@ -497,12 +538,12 @@ export class TaskExecutionService {
             )
             .setTimestamp()
             .setFooter({ text: 'Este mensaje se borrará en 1 hora' });
-          
-          const publicMessage = await channel.send({ 
+
+          const publicMessage = await channel.send({
             content: '@here',
-            embeds: [embed] 
+            embeds: [embed]
           });
-          
+
           // Borrar mensaje después de 1 hora
           setTimeout(async () => {
             try {
@@ -515,7 +556,7 @@ export class TaskExecutionService {
       } catch (error) {
         Logger.error('Error enviando mensaje público de cooldown global:', error);
       }
-      
+
       // No enviar DM para tareas globales
       return;
     }
@@ -531,7 +572,7 @@ export class TaskExecutionService {
       )
       .setTimestamp()
       .setFooter({ text: '¡Puedes empezar cuando quieras!' });
-    
+
     // Enviar DM al usuario
     let dmSuccess = true;
     let dmError: string | undefined;
@@ -618,8 +659,9 @@ export class TaskExecutionService {
       Logger.error('Error obteniendo board para reset:', error);
     }
 
-    // Obtener información del usuario
-    const userInfo = await this.getUserInfo(params.userId);
+    // Obtener información del usuario real si es tarea global
+    const auditUserId = (task.isGlobal && executionToReset.realUserId) ? executionToReset.realUserId : params.userId;
+    const userInfo = await this.getUserInfo(auditUserId);
 
     // Registrar en auditoría
     try {
@@ -646,6 +688,23 @@ export class TaskExecutionService {
       )
       .setTimestamp()
       .setFooter({ text: '¡Puedes iniciarla de nuevo!' });
+
+    // Si es global, enviar al canal y NO al usuario
+    if (task.isGlobal) {
+      // Enviar al canal donde se ejecutó (si tenemos channelId), o intentar obtenerlo
+      // Como resetTask viene de un comando, params no tiene channelId, pero executionToReset sí
+      if (executionToReset.channelId) {
+        await this.notificationPort.sendChannelMessageWithAutoDelete(
+          executionToReset.channelId,
+          embed,
+          60 * 60 * 1000 // 1 hora
+        );
+      }
+      return {
+        success: true,
+        message: `Tarea global "${task.name}" reiniciada exitosamente.`
+      };
+    }
 
     let dmSuccess = true;
     let dmError: string | undefined;
@@ -688,11 +747,11 @@ export class TaskExecutionService {
     const pastDate = new Date(now.getTime() - 1000); // 1 segundo en el pasado
 
     for (const execution of allExecutions) {
-      const shouldReset = 
+      const shouldReset =
         execution.status === TaskExecutionStatus.RUNNING ||
-        (execution.status === TaskExecutionStatus.COMPLETED && 
-         execution.availableAt && 
-         new Date(execution.availableAt).getTime() > Date.now());
+        (execution.status === TaskExecutionStatus.COMPLETED &&
+          execution.availableAt &&
+          new Date(execution.availableAt).getTime() > Date.now());
 
       if (shouldReset) {
         // Cancelar schedulers

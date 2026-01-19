@@ -3,7 +3,7 @@ import { INotificationPort } from '../../../../domain/ports/out/INotificationPor
 import { Logger } from '../../../utils/Logger';
 
 export class DiscordNotificationAdapter implements INotificationPort {
-  constructor(private readonly client: Client) {}
+  constructor(private readonly client: Client) { }
 
   async sendDirectMessage(userId: string, message: string): Promise<void> {
     try {
@@ -70,6 +70,28 @@ export class DiscordNotificationAdapter implements INotificationPort {
     } catch (error) {
       Logger.error('Failed to send ephemeral embed:', error);
       throw error;
+    }
+  }
+
+  async sendChannelMessageWithAutoDelete(channelId: string, embed: EmbedBuilder, deleteAfterMs: number): Promise<void> {
+    try {
+      const channel = await this.client.channels.fetch(channelId);
+      if (channel && channel.isTextBased() && 'send' in channel) {
+        const message = await channel.send({ embeds: [embed] });
+
+        if (deleteAfterMs > 0) {
+          setTimeout(async () => {
+            try {
+              await message.delete();
+            } catch (error) {
+              Logger.error(`Failed to delete message in channel ${channelId}:`, error);
+            }
+          }, deleteAfterMs);
+        }
+      }
+    } catch (error) {
+      Logger.error(`Failed to send auto-delete message to channel ${channelId}:`, error);
+      // No lanzamos error para no interrumpir el flujo principal si falla un mensaje efímero
     }
   }
 }

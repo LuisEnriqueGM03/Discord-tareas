@@ -40,6 +40,17 @@
       "description": "Robo de coche en el territorio marcado",
       "emoji": "🚗",
       "buttonStyle": "Primary"
+    },
+    {
+      "name": "Prueba 5 Varias",
+      "durationMinutes": 9,
+      "cooldownMinutes": 1440,
+      "isGlobal": true,
+      "notificationIntervalMinutes": 3,
+      "earlyNotificationMinutes": 1,
+      "description": "Tarea global de vigilancia que dura 9 horas con notificaciones cada 3 horas",
+      "emoji": "🌲",
+      "buttonStyle": "Success"
     }
   ]
 }

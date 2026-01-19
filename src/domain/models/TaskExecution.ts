@@ -12,4 +12,5 @@ export interface TaskExecution {
   status: TaskExecutionStatus;
   currentUses?: number; // Cuántas veces se ha usado en esta sesión
   createdAt: Date;
+  realUserId?: string; // ID real del usuario que inició la tarea (importante para tareas globales)
 }
