@@ -16,4 +16,6 @@ export interface TaskConfig {
   buttonStyle: 'Primary' | 'Secondary' | 'Success' | 'Danger';
   maxUses?: number;
   isGlobal?: boolean;
+  notificationIntervalMinutes?: number;
+  earlyNotificationMinutes?: number;
 }

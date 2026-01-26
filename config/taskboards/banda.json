@@ -26,7 +26,7 @@
     {
     "name": "Run de Banda",
     "durationMinutes": 0,
-    "cooldownMinutes": 540,
+    "cooldownMinutes": 120,
     "isGlobal": true,
     "description": "Esta tarea es para todo el servidor",
     "emoji": "🚙",
@@ -35,7 +35,7 @@
     {
       "name": "Platancion de Droga",
       "durationMinutes": 540,
-      "cooldownMinutes": 1440,
+      "cooldownMinutes": 0,
       "isGlobal": true,
       "notificationIntervalMinutes": 180,
       "earlyNotificationMinutes": 10,

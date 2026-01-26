@@ -1,6 +1,7 @@
 import { ButtonInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { TaskExecutionService } from '../../../../../application/services/TaskExecutionService';
 import { TaskService } from '../../../../../application/services/TaskService';
+import { NotificationService } from '../../../../../application/services/NotificationService';
 import { INotificationPort } from '../../../../../domain/ports/out/INotificationPort';
 import { TaskExecutionStatus } from '../../../../../domain/enums/TaskExecutionStatus';
 import { TaskAlreadyRunningException } from '../../../../../domain/exceptions/TaskAlreadyRunningException';
@@ -13,7 +14,8 @@ export class ButtonInteractionHandler {
   constructor(
     private readonly taskExecutionService: TaskExecutionService,
     private readonly taskService: TaskService,
-    private readonly notificationPort: INotificationPort
+    private readonly notificationPort: INotificationPort,
+    private readonly notificationService: NotificationService
   ) {}
 
   async handle(interaction: ButtonInteraction): Promise<void> {
@@ -72,26 +74,35 @@ export class ButtonInteractionHandler {
           const totalSeconds = status.remainingDurationSeconds || 0;
           const minutes = Math.floor(totalSeconds / 60);
           const seconds = totalSeconds % 60;
-          const timeDisplay = `${minutes}m ${seconds}s`;
-
-          const embed = new EmbedBuilder()
-            .setColor(0xFFAA00)
-            .setTitle('🔄 Tarea en Progreso')
-            .setDescription(`Tu tarea de **${task.name}** está activa`)
-            .addFields(
-              { name: '⏱️ Tiempo Restante', value: timeDisplay, inline: false }
+          
+          // Verificar si es tarea con intervalos
+          const hasIntervals = task.notificationIntervalMinutes && task.notificationIntervalMinutes > 0;
+          
+          if (hasIntervals) {
+            // Usar el método específico para tareas con intervalos
+            // Calcular tiempo transcurrido = duración total - tiempo restante
+            const totalMs = task.durationMinutes * 60 * 1000;
+            const remainingMs = (status.remainingDurationSeconds || 0) * 1000;
+            const elapsedMs = totalMs - remainingMs;
+            const elapsedMinutes = elapsedMs / 60000;
+            const totalIntervals = Math.floor(task.durationMinutes / (task.notificationIntervalMinutes || 1));
+            
+            await this.notificationService.sendIntervalTaskInProgressMessage(
+              interaction,
+              task.name,
+              minutes,
+              task.notificationIntervalMinutes || 1,
+              totalIntervals,
+              elapsedMinutes
             );
-
-          if (maxUses > 1) {
-            embed.addFields(
-              { name: '🔢 Usos', value: `${status.currentUses || 1}/${maxUses}`, inline: true }
+          } else {
+            // Usar el método normal
+            await this.notificationService.sendTaskInProgressMessage(
+              interaction,
+              task.name,
+              minutes + (seconds > 0 ? 1 : 0) // Redondear hacia arriba si hay segundos
             );
           }
-
-          embed.setTimestamp()
-            .setFooter({ text: '¡Sigue así!' });
-          
-          await this.sendEphemeralResponse(interaction, embed);
           break;
         }
 
@@ -170,29 +181,58 @@ export class ButtonInteractionHandler {
           
           // Si es tarea global, enviar mensaje público que se borre en 1 hora
           if (isGlobal) {
-            const embed = new EmbedBuilder()
-              .setColor(0x00FF00)
-              .setTitle('🌍 ¡Tarea Global Iniciada!')
-              .setDescription(`**${task.name}** ha sido completada por ${interaction.user.displayName}`);
-
-            if (isInstant) {
-              embed.addFields(
-                { name: '⚡ Tipo', value: 'Instantánea', inline: true },
-                { name: '⏳ Cooldown', value: TimeFormatter.formatMillisecondsWithSeconds(task.cooldownMinutes * 60 * 1000), inline: true }
-              );
+            const hasIntervals = task.notificationIntervalMinutes && task.notificationIntervalMinutes > 0;
+            
+            let embed: EmbedBuilder;
+            
+            if (hasIntervals) {
+              // Embed especial para tareas globales con intervalos
+              const totalIntervals = Math.floor(task.durationMinutes / task.notificationIntervalMinutes!);
+              const firstNotificationTime = task.notificationIntervalMinutes! - (task.earlyNotificationMinutes || 0);
+              const startTime = Date.now();
+              const firstNotificationDate = new Date(startTime + firstNotificationTime * 60 * 1000);
+              const endTime = new Date(startTime + task.durationMinutes * 60 * 1000);
+              
+              embed = new EmbedBuilder()
+                .setColor(0x00FF00)
+                .setTitle('🌍 ¡Tarea Global con Intervalos Iniciada!')
+                .setDescription(`**${task.name}** ha sido iniciada por ${interaction.user.displayName}`)
+                .addFields(
+                  { name: '🕰️ Momento actual', value: `<t:${Math.floor(startTime / 1000)}:F>`, inline: true },
+                  { name: '⏱️ Duración total', value: `${task.durationMinutes} minutos`, inline: true },
+                  { name: '🎯 Finaliza', value: `<t:${Math.floor(endTime.getTime() / 1000)}:R>`, inline: true },
+                  { name: '📊 Progreso', value: `0/${totalIntervals} intervalos`, inline: true },
+                  { name: '🎀 Intervalo cada', value: `${task.notificationIntervalMinutes} min`, inline: true },
+                  { name: '⚠️ Aviso anticipado', value: `${task.earlyNotificationMinutes || 0} min`, inline: true },
+                  { name: '🔔 Primer aviso', value: `<t:${Math.floor(firstNotificationDate.getTime() / 1000)}:R>`, inline: false },
+                  { name: '⏳ Cooldown', value: 'Sin cooldown', inline: false }
+                );
             } else {
-              embed.addFields(
-                { name: '⏱️ Duración', value: TimeFormatter.formatMillisecondsWithSeconds(task.durationMinutes * 60 * 1000), inline: true },
-                { name: '⏳ Cooldown', value: TimeFormatter.formatMillisecondsWithSeconds(task.cooldownMinutes * 60 * 1000), inline: true }
-              );
-            }
+              // Embed normal para tareas globales sin intervalos
+              embed = new EmbedBuilder()
+                .setColor(0x00FF00)
+                .setTitle('🌍 ¡Tarea Global Iniciada!')
+                .setDescription(`**${task.name}** ha sido completada por ${interaction.user.displayName}`);
 
-            if (maxUses > 1) {
-              embed.addFields(
-                { name: '🔢 Usos Disponibles', value: `${status.remainingUses || maxUses}/${maxUses}`, inline: true }
-              );
-            }
+              if (isInstant) {
+                embed.addFields(
+                  { name: '⚡ Tipo', value: 'Instantánea', inline: true },
+                  { name: '⏳ Cooldown', value: TimeFormatter.formatMillisecondsWithSeconds(task.cooldownMinutes * 60 * 1000), inline: true }
+                );
+              } else {
+                embed.addFields(
+                  { name: '⏱️ Duración', value: TimeFormatter.formatMillisecondsWithSeconds(task.durationMinutes * 60 * 1000), inline: true },
+                  { name: '⏳ Cooldown', value: TimeFormatter.formatMillisecondsWithSeconds(task.cooldownMinutes * 60 * 1000), inline: true }
+                );
+              }
 
+              if (maxUses > 1) {
+                embed.addFields(
+                  { name: '🔢 Usos Disponibles', value: `${status.remainingUses || maxUses}/${maxUses}`, inline: true }
+                );
+              }
+            }
+            
             embed.setTimestamp()
               .setFooter({ text: 'Este mensaje se borrará en 1 hora' });
             
@@ -214,34 +254,27 @@ export class ButtonInteractionHandler {
               }
             }, 60 * 60 * 1000); // 1 hora
           } else {
-            // Tarea personal - ephemeral como antes
-            const embed = new EmbedBuilder()
-              .setColor(0x00FF00)
-              .setTitle('✅ ¡Tarea Iniciada!')
-              .setDescription(`Tu tarea de **${task.name}** ha comenzado`);
-
-            if (isInstant) {
-              embed.addFields(
-                { name: '⚡ Tipo', value: 'Instantánea', inline: true },
-                { name: '⏳ Cooldown', value: TimeFormatter.formatMillisecondsWithSeconds(task.cooldownMinutes * 60 * 1000), inline: true }
+            // Tarea personal - usar NotificationService
+            const hasIntervals = task.notificationIntervalMinutes && task.notificationIntervalMinutes > 0;
+            
+            if (hasIntervals) {
+              // Usar el método específico para tareas con intervalos
+              await this.notificationService.sendIntervalTaskStartedMessage(
+                interaction,
+                task.name,
+                task.durationMinutes,
+                task.notificationIntervalMinutes || 1,
+                task.earlyNotificationMinutes || 0
               );
             } else {
-              embed.addFields(
-                { name: '⏱️ Duración', value: TimeFormatter.formatMillisecondsWithSeconds(task.durationMinutes * 60 * 1000), inline: true },
-                { name: '⏳ Cooldown', value: TimeFormatter.formatMillisecondsWithSeconds(task.cooldownMinutes * 60 * 1000), inline: true }
+              // Usar el método normal
+              await this.notificationService.sendTaskStartedMessage(
+                interaction,
+                task.name,
+                task.durationMinutes,
+                task.cooldownMinutes
               );
             }
-
-            if (maxUses > 1) {
-              embed.addFields(
-                { name: '🔢 Usos Disponibles', value: `${status.remainingUses || maxUses}/${maxUses}`, inline: true }
-              );
-            }
-
-            embed.setTimestamp()
-              .setFooter({ text: '¡Buena suerte! • Puedes descartar este mensaje cuando quieras' });
-            
-            await this.sendEphemeralResponse(interaction, embed);
           }
           break;
         }

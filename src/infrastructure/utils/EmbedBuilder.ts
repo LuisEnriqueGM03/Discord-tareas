@@ -24,6 +24,7 @@ export class TaskBoardEmbedBuilder {
       const isMultiUse = maxUses > 1;
       const isInstant = task.durationMinutes === 0;
       const isGlobal = task.isGlobal || false;
+      const hasIntervals = task.notificationIntervalMinutes && task.notificationIntervalMinutes > 0;
       
       let taskInfo = '';
       
@@ -34,8 +35,28 @@ export class TaskBoardEmbedBuilder {
         taskInfo += `⏱️ **Duración:** ${TimeFormatter.formatMillisecondsWithSeconds(task.durationMinutes * 60 * 1000)}\n`;
       }
       
-      // Cooldown
-      taskInfo += `⏳ **Cooldown:** ${TimeFormatter.formatMillisecondsWithSeconds(task.cooldownMinutes * 60 * 1000)}`;
+      // Cooldown (solo si no tiene intervalos)
+      if (hasIntervals) {
+        // Información de intervalos
+        const intervalMinutes = task.notificationIntervalMinutes!; // Ya validado en hasIntervals
+        const totalIntervals = Math.floor(task.durationMinutes / intervalMinutes);
+        const notificationTimes: string[] = [];
+        
+        for (let i = 1; i <= totalIntervals; i++) {
+          const intervalTime = i * intervalMinutes;
+          const notificationTime = intervalTime - (task.earlyNotificationMinutes || 0);
+          if (notificationTime > 0) {
+            notificationTimes.push(`${notificationTime}min`);
+          }
+        }
+        
+        taskInfo += `📢 **Intervalos:** Cada ${intervalMinutes}min (${totalIntervals} total)\n`;
+        taskInfo += `🔔 **Avisos en:** ${notificationTimes.join(', ')}\n`;
+        taskInfo += `⚠️ **Anticipación:** ${task.earlyNotificationMinutes || 0}min antes\n`;
+        taskInfo += `⏳ **Cooldown:** Sin cooldown`;
+      } else {
+        taskInfo += `⏳ **Cooldown:** ${TimeFormatter.formatMillisecondsWithSeconds(task.cooldownMinutes * 60 * 1000)}`;
+      }
       
       // Multi-Uso
       if (isMultiUse) {

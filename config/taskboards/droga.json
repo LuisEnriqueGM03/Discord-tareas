@@ -14,9 +14,9 @@
       "buttonStyle": "Primary"
     },
     {
-      "name": "Run de Droga Outsider",
+      "name": "Run de Droga Camellos",
       "durationMinutes": 0,
-      "cooldownMinutes": 540,
+      "cooldownMinutes": 120,
       "description": "Vende droga en el territorio marcado",
       "emoji": "🚙",
       "buttonStyle": "Primary"

@@ -147,6 +147,7 @@ export class DIContainer {
       this.taskService,
       this.taskBoardService,
       this.notificationPort,
+      this.notificationService,
       this.taskExecutionRepository,
       this.auditLogService,
       botConfig.taskboardsConfigPath,

@@ -5,6 +5,7 @@ import { CreateBoardCommand, ResetTaskCommand, ResetAllTasksCommand, ResetGlobal
 import { TaskExecutionService } from '../../../../application/services/TaskExecutionService';
 import { TaskService } from '../../../../application/services/TaskService';
 import { TaskBoardService } from '../../../../application/services/TaskBoardService';
+import { NotificationService } from '../../../../application/services/NotificationService';
 import { INotificationPort } from '../../../../domain/ports/out/INotificationPort';
 import { ITaskExecutionRepository } from '../../../../domain/ports/out/ITaskExecutionRepository';
 import { AuditLogService } from '../../../../application/services/AuditLogService';
@@ -21,6 +22,7 @@ export class DiscordBotAdapter {
     private readonly taskService: TaskService,
     private readonly taskBoardService: TaskBoardService,
     private readonly notificationPort: INotificationPort,
+    private readonly notificationService: NotificationService,
     private readonly taskExecutionRepository: ITaskExecutionRepository,
     private readonly auditLogService: AuditLogService,
     private readonly configPath: string,
@@ -85,7 +87,8 @@ export class DiscordBotAdapter {
     const buttonHandler = new ButtonInteractionHandler(
       this.taskExecutionService,
       this.taskService,
-      this.notificationPort
+      this.notificationPort,
+      this.notificationService
     );
 
     // Interaction create event

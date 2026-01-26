@@ -19,6 +19,8 @@ import { EmbedBuilder, Client } from 'discord.js';
 import { AuditLogService, AuditUserInfo } from './AuditLogService';
 
 export class TaskExecutionService {
+  private notificationTimeouts: Map<string, NodeJS.Timeout[]> = new Map();
+
   constructor(
     private readonly taskExecutionRepository: ITaskExecutionRepository,
     private readonly taskRepository: ITaskRepository,
@@ -28,6 +30,17 @@ export class TaskExecutionService {
     private readonly auditLogService: AuditLogService,
     private readonly client: Client
   ) { }
+
+  private cancelNotificationTimeouts(executionId: string): void {
+    const timeouts = this.notificationTimeouts.get(executionId);
+    if (timeouts) {
+      timeouts.forEach(timeout => {
+        clearTimeout(timeout);
+      });
+      this.notificationTimeouts.delete(executionId);
+      Logger.info(`Cancelados ${timeouts.length} timeouts de notificaciones para ejecución ${executionId}`);
+    }
+  }
 
   private schedulePeriodicNotifications(
     execution: TaskExecution,
@@ -43,6 +56,8 @@ export class TaskExecutionService {
     const earlyNotificationMs = (task.earlyNotificationMinutes || 0) * 60 * 1000;
 
     let notificationCount = 0;
+    const notificationTimes: number[] = [];
+    const timeouts: NodeJS.Timeout[] = [];
 
     // Calcular el TIEMPO EXACTO de cada notificación
     // Si la duración es 9min, intervalo 3min, early 1min:
@@ -51,8 +66,9 @@ export class TaskExecutionService {
 
     // Comenzamos con el primer intervalo
     let nextIntervalTimeMs = intervalMs;
+    const startTime = new Date(execution.startedAt);
 
-    while (nextIntervalTimeMs < durationMs) {
+    while (nextIntervalTimeMs <= durationMs) {
       // El tiempo de notificación es (intervalo - tiempo anticipado)
       // Si el resultado es <= 0, no tiene sentido notificar
       const notificationTimeMs = nextIntervalTimeMs - earlyNotificationMs;
@@ -60,65 +76,119 @@ export class TaskExecutionService {
       // Solo programar si cae dentro de la duración de la tarea y es positivo
       if (notificationTimeMs > 0 && notificationTimeMs < durationMs) {
         notificationCount++;
+        notificationTimes.push(nextIntervalTimeMs);
 
-        // Calcular horas/minutos para el mensaje
-        const elapsedHours = nextIntervalTimeMs / (60 * 60 * 1000);
-        const nextTimeMinutes = task.durationMinutes > (nextIntervalTimeMs / 60000) + task.notificationIntervalMinutes
-          ? task.notificationIntervalMinutes
-          : 0; // Si es 0, es la última
+        const intervalNumber = notificationCount;
+        const totalIntervals = Math.floor(durationMs / intervalMs);
+        const isLast = intervalNumber === totalIntervals;
 
-        setTimeout(async () => {
+        // Calcular tiempo en que debería completarse el intervalo
+        const intervalCompleteTime = new Date(startTime.getTime() + nextIntervalTimeMs);
+        const notificationTime = new Date(startTime.getTime() + notificationTimeMs);
+        const nextNotificationTime = isLast ? null : new Date(startTime.getTime() + nextIntervalTimeMs + intervalMs - earlyNotificationMs);
+
+        const timeoutId = setTimeout(async () => {
           try {
-            const isLast = (nextIntervalTimeMs + intervalMs) >= durationMs;
             const messageTitle = isLast
-              ? `📝 Último Aviso: ${task.name}`
-              : `🔔 Recordatorio: ${task.name}`;
+              ? `📋 Último Aviso: ${task.name}`
+              : `🔔 Aviso ${intervalNumber}/${totalIntervals}: ${task.name}`;
 
             const description = isLast
-              ? `Tu tarea de **${task.name}** te avisa por última vez que tienes que ir a **${task.name}**.`
-              : `Tu tarea de **${task.name}** te avisa que tienes que ir a **${task.name}**.\nTe avisaré de nuevo en **${task.notificationIntervalMinutes} minutos**.`;
+              ? `@here\n\n¡Es hora de realizar **${task.name}** por última vez!`
+              : `@here\n\nEs hora de realizar **${task.name}**`;
 
             const embed = new EmbedBuilder()
-              .setColor(isLast ? 0xFF9900 : 0x00CCFF)
+              .setColor(isLast ? 0xFF4500 : 0xFF8C00) // Rojo para último, naranja para otros
               .setTitle(messageTitle)
               .setDescription(description)
+              .addFields(
+                { name: '🕰️ Momento actual', value: `<t:${Math.floor(notificationTime.getTime() / 1000)}:F>`, inline: true },
+                { name: '📊 Progreso', value: `${intervalNumber}/${totalIntervals} intervalos`, inline: true },
+                { name: '⏱️ Intervalo cada', value: `${task.notificationIntervalMinutes} min`, inline: true },
+                { name: '⚠️ Aviso anticipado', value: `${task.earlyNotificationMinutes || 0} min`, inline: true }
+              )
               .setTimestamp()
-              .setFooter({ text: isLast ? '¡Última llamada!' : '¡Mantente atento!' });
+              .setFooter({ text: isLast ? '¡Última oportunidad!' : '¡Sigue el cronograma!' });
+
+            // Agregar campo de próximo aviso si no es el último
+            if (!isLast && nextNotificationTime) {
+              embed.addFields(
+                { name: '🔔 Próximo aviso', value: `<t:${Math.floor(nextNotificationTime.getTime() / 1000)}:R>`, inline: false }
+              );
+            }
 
             // Si es global, ENVIAR AL CANAL DEL BOARD con auto-delete
             if (task.isGlobal && execution.channelId) {
               await this.notificationPort.sendChannelMessageWithAutoDelete(
                 execution.channelId,
                 embed,
-                60 * 60 * 1000 // Borrar en 1 hora
+                60 * 60 * 1000, // Borrar en 1 hora
+                '@here'
               );
             } else {
               // Si es personal, enviar DM
               await this.notificationPort.sendDirectMessageEmbed(realUserId, embed);
             }
 
-            Logger.info(`Notificación periódica ${notificationCount} enviada para tarea ${task.name} (${notificationTimeMs / 60000}m)`);
+            Logger.info(`Notificación periódica ${intervalNumber}/${totalIntervals} enviada para tarea ${task.name} (${notificationTimeMs / 60000}m)`);
           } catch (error) {
             Logger.error(`Error enviando notificación periódica para tarea ${task.name}:`, error);
           }
         }, notificationTimeMs);
+        
+        timeouts.push(timeoutId);
       }
 
       nextIntervalTimeMs += intervalMs;
     }
 
-    // Programar notificación final de "por terminar" solo si NO coincide con una periódica
-    // y si está configurada explícitamente y es diferente de las periódicas
-    // (En este caso, la lógica anterior ya cubre los "avisos anticipados" de los intervalos,
-    // pero mantenemos la notificación de finalización pura si se desea, aunque con la lógica
-    // de arriba "2, 5, 8" ya cubrimos el aviso antes de que termine a los 9)
+    // Programar notificación final cuando termine completamente la tarea
+    const finalNotificationTime = durationMs;
+    const finalTimeoutId = setTimeout(async () => {
+      try {
+        const endTime = new Date(startTime.getTime() + durationMs);
+        const totalIntervals = Math.floor(durationMs / intervalMs);
+        
+        const finalEmbed = new EmbedBuilder()
+          .setColor(0x00FF00)
+          .setTitle(`✅ Tarea Completada: ${task.name}`)
+          .setDescription(`@here\n\n¡Has completado exitosamente **${task.name}**!\n\n🎉 **Todos los intervalos finalizados**`)
+          .addFields(
+            { name: '🕰️ Finalizada', value: `<t:${Math.floor(endTime.getTime() / 1000)}:F>`, inline: true },
+            { name: '📊 Total intervalos', value: `${totalIntervals} completados`, inline: true },
+            { name: '⏱️ Duración total', value: `${task.durationMinutes} minutos`, inline: true },
+            { name: '🔔 Intervalos cada', value: `${task.notificationIntervalMinutes} min`, inline: true }
+          )
+          .setTimestamp()
+          .setFooter({ text: '¡Excelente trabajo!' });
 
-    // Si queremos mantener la notificación explícita de "Faltan X minutos para terminar" 
-    // aparte de los intervalos, la dejamos, pero verificamos que no se superponga demasiado.
-    // Con la lógica solicitada, los intervalos YA SON anticipados, así que esto podría ser redundante
-    // o complementario. Lo dejaremos solo si earlyNotification > 0 y no se superpone exactamente.
+        // Si es global, enviar al canal
+        if (task.isGlobal && execution.channelId) {
+          await this.notificationPort.sendChannelMessageWithAutoDelete(
+            execution.channelId,
+            finalEmbed,
+            60 * 60 * 1000, // Borrar en 1 hora
+            '@here'
+          );
+        } else {
+          // Si es personal, enviar DM
+          await this.notificationPort.sendDirectMessageEmbed(realUserId, finalEmbed);
+        }
 
-    Logger.info(`Programadas ${notificationCount} notificaciones periódicas anticipadas para tarea ${task.name}`);
+        Logger.info(`Notificación final enviada para tarea completada ${task.name}`);
+      } catch (error) {
+        Logger.error(`Error enviando notificación final para tarea ${task.name}:`, error);
+      }
+    }, finalNotificationTime);
+    
+    timeouts.push(finalTimeoutId);
+    
+    // Guardar todos los timeouts para poder cancelarlos
+    if (execution.id) {
+      this.notificationTimeouts.set(execution.id, timeouts);
+    }
+
+    Logger.info(`Programadas ${notificationCount} notificaciones periódicas + notificación final para tarea ${task.name}`);
   }
 
   private async getUserInfo(userId: string): Promise<AuditUserInfo> {
@@ -355,6 +425,9 @@ export class TaskExecutionService {
       return;
     }
 
+    // Limpiar timeouts de notificaciones al completar
+    this.cancelNotificationTimeouts(taskExecutionId);
+
     // Verificar si la ejecución fue reseteada
     const now = new Date();
     const availableAt = execution.availableAt ? new Date(execution.availableAt) : null;
@@ -373,6 +446,21 @@ export class TaskExecutionService {
       return;
     }
 
+    // Verificar si la tarea tiene intervalos configurados
+    const hasIntervals = task.notificationIntervalMinutes && task.notificationIntervalMinutes > 0;
+
+    // Para tareas con intervalos, no aplicar cooldown
+    if (hasIntervals) {
+      execution.completedAt = now;
+      execution.availableAt = now; // Disponible inmediatamente
+      execution.status = TaskExecutionStatus.COMPLETED;
+      await this.taskExecutionRepository.update(execution);
+      
+      Logger.info(`Tarea con intervalos ${task.name} completada sin cooldown`);
+      return; // No enviar DM ni auditoría para tareas con intervalos
+    }
+
+    // Para tareas normales, aplicar lógica original de cooldown
     // El cooldown corre EN PARALELO con la duración, no después
     // availableAt = startedAt + max(durationMinutes, cooldownMinutes)
     const maxTimeMs = Math.max(task.durationMinutes, task.cooldownMinutes) * 60 * 1000;
@@ -637,7 +725,9 @@ export class TaskExecutionService {
       Logger.info(`Cancelando schedulers para ejecución ${executionToReset.id}`);
       this.schedulerPort.cancelScheduledTask(executionToReset.id);
       this.schedulerPort.cancelScheduledTask(`cooldown_${executionToReset.id}`);
-      Logger.info(`Schedulers cancelados para ejecución ${executionToReset.id}`);
+      // Cancelar timeouts de notificaciones de intervalos
+      this.cancelNotificationTimeouts(executionToReset.id);
+      Logger.info(`Schedulers y timeouts cancelados para ejecución ${executionToReset.id}`);
     }
 
     // Marcar la ejecución como cancelada y disponible inmediatamente
@@ -758,6 +848,8 @@ export class TaskExecutionService {
         if (execution.id) {
           this.schedulerPort.cancelScheduledTask(execution.id);
           this.schedulerPort.cancelScheduledTask(`cooldown_${execution.id}`);
+          // Cancelar timeouts de notificaciones de intervalos
+          this.cancelNotificationTimeouts(execution.id);
         }
 
         // Marcar como disponible

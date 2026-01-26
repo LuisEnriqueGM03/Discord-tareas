@@ -68,10 +68,31 @@ export class AuditLogService {
       embed.addFields({ name: '\u200B', value: '\u200B', inline: true });
     }
 
+    // Verificar si es tarea con intervalos
+    const hasIntervals = task.notificationIntervalMinutes && task.notificationIntervalMinutes > 0;
+
     if (isInstant) {
       embed.addFields(
         { name: '⚡ Tipo', value: 'Instantánea', inline: true },
         { name: '⏳ Cooldown', value: TimeFormatter.formatMillisecondsWithSeconds(task.cooldownMinutes * 60 * 1000), inline: true }
+      );
+    } else if (hasIntervals) {
+      // Calcular cantidad de intervalos
+      const totalIntervals = Math.floor(task.durationMinutes / task.notificationIntervalMinutes!);
+      const notificationTimes: string[] = [];
+      
+      for (let i = 1; i <= totalIntervals; i++) {
+        const intervalTime = i * task.notificationIntervalMinutes!;
+        const notificationTime = intervalTime - (task.earlyNotificationMinutes || 0);
+        if (notificationTime > 0) {
+          notificationTimes.push(`${notificationTime}min`);
+        }
+      }
+      
+      embed.addFields(
+        { name: '⏱️ Duración', value: TimeFormatter.formatMillisecondsWithSeconds(task.durationMinutes * 60 * 1000), inline: true },
+        { name: '📢 Intervalos', value: `Cada ${task.notificationIntervalMinutes}min (${totalIntervals} total)`, inline: true },
+        { name: '🔔 Avisos en', value: notificationTimes.join(', '), inline: true }
       );
     } else {
       embed.addFields(
@@ -100,7 +121,12 @@ export class AuditLogService {
       embed.addFields({ name: '\u200B', value: '\u200B', inline: true });
     }
 
-    if (currentUses >= maxUses) {
+    // Para tareas con intervalos, no mostrar cooldown ya que no tienen
+    if (hasIntervals) {
+      embed.addFields(
+        { name: '✅ Estado', value: 'Sin cooldown (intervalos activos)', inline: true }
+      );
+    } else if (currentUses >= maxUses) {
       embed.addFields(
         { name: '✅ Disponible Nuevamente', value: `<t:${Math.floor(cooldownEndTime.getTime() / 1000)}:F>\n<t:${Math.floor(cooldownEndTime.getTime() / 1000)}:R>`, inline: true }
       );

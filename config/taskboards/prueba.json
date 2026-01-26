@@ -44,11 +44,11 @@
     {
       "name": "Prueba 5 Varias",
       "durationMinutes": 9,
-      "cooldownMinutes": 1440,
+      "cooldownMinutes": 0,
       "isGlobal": true,
       "notificationIntervalMinutes": 3,
       "earlyNotificationMinutes": 1,
-      "description": "Tarea global de vigilancia que dura 9 horas con notificaciones cada 3 horas",
+      "description": "Tarea global de vigilancia que dura 9 minutos con notificaciones cada 3 minutos (avisos en: 2min, 5min, 8min)",
       "emoji": "🌲",
       "buttonStyle": "Success"
     }

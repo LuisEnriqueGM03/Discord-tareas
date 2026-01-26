@@ -73,11 +73,14 @@ export class DiscordNotificationAdapter implements INotificationPort {
     }
   }
 
-  async sendChannelMessageWithAutoDelete(channelId: string, embed: EmbedBuilder, deleteAfterMs: number): Promise<void> {
+  async sendChannelMessageWithAutoDelete(channelId: string, embed: EmbedBuilder, deleteAfterMs: number, content?: string): Promise<void> {
     try {
       const channel = await this.client.channels.fetch(channelId);
       if (channel && channel.isTextBased() && 'send' in channel) {
-        const message = await channel.send({ embeds: [embed] });
+        const message = await channel.send({ 
+          content: content,
+          embeds: [embed] 
+        });
 
         if (deleteAfterMs > 0) {
           setTimeout(async () => {

@@ -37,6 +37,8 @@ export class TaskBoardService {
           buttonStyle: taskConfig.buttonStyle as ButtonStyle,
           maxUses: taskConfig.maxUses,
           isGlobal: taskConfig.isGlobal,
+          notificationIntervalMinutes: taskConfig.notificationIntervalMinutes,
+          earlyNotificationMinutes: taskConfig.earlyNotificationMinutes,
           boardId: boardId,
           createdAt: now
         };
